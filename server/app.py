@@ -30,11 +30,12 @@ def get_restaurants():
     return jsonify([restaurant.to_dict() for restaurant in restaurants])
 
 @app.route('/restaurants/<int:id>', methods=['GET'])
-def get_restaurant(id):
-    restaurant = Restaurant.query.get(id)
-    if not restaurant:
-        return jsonify({"error": "Restaurant not found"}), 404
-    return jsonify(restaurant.to_dict())
+def get_restaurant_by_id(id):
+    restaurant = Restaurant.query.options(joinedload('restaurant_pizzas')).get(id)
+    if restaurant:
+        return jsonify(restaurant.to_dict(include_pizzas=True))
+    return jsonify({"error": "Restaurant not found"}), 404
+
 
 @app.route('/restaurants/<int:id>', methods=['DELETE'])
 def delete_restaurant(id):
@@ -61,8 +62,9 @@ def create_restaurant_pizza():
         )
         db.session.add(restaurant_pizza)
         db.session.commit()
-    except ValueError as e:
-        return jsonify({"errors": [str(e)]}), 400
+    except ValueError as :
+        return jsonify({"errors": ["validation errors"]}), 400
+    restaurant_pizza = RestaurantPizza.query.options(joinedload('pizza'), joinedload('restaurant')).get(restaurant_pizza.id)
     return jsonify(restaurant_pizza.to_dict()), 201
 
 if __name__ == "__main__":
